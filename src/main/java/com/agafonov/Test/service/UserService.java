@@ -29,6 +29,9 @@ public class UserService {
 
     @CacheEvict(allEntries = true)
     public UserResponse createUser(UserRequest userRequest) {
+        if (userRepository.existsByPhoneNumber(userRequest.getPhoneNumber())) {
+            throw new IllegalArgumentException("Phone number already exists");
+        }
         Role role = roleRepository.findByRoleName(userRequest.getRoleName())
                 .orElseGet(() -> roleRepository.save(
                         Role.builder().roleName(userRequest.getRoleName()).build()));
@@ -53,6 +56,11 @@ public class UserService {
     public UserResponse updateUser(UUID userID, UserRequest userRequest) {
         User existingUser = userRepository.findById(userID)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userID));
+
+        if (!existingUser.getPhoneNumber().equals(userRequest.getPhoneNumber())
+                && userRepository.existsByPhoneNumber(userRequest.getPhoneNumber())) {
+            throw new IllegalArgumentException("Phone number already exists");
+        }
 
         Role role = roleRepository.findByRoleName(userRequest.getRoleName())
                 .orElseGet(() -> roleRepository.save(
